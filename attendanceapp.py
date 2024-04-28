@@ -21,7 +21,6 @@ class AttendanceApp(tk.Tk):
         self.offset_y = (self.canvas_height - (5 * self.rect_height + 4 * self.padding)) // 2
 
         self.current_column = 0
-        self.current_rol = 0
         self.create_canvas()
         self.create_period_labels()
         self.create_row_labels()
