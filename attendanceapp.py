@@ -21,6 +21,7 @@ class AttendanceApp(tk.Tk):
         self.offset_y = (self.canvas_height - (5 * self.rect_height + 4 * self.padding)) // 2
 
         self.current_column = 0
+        self.current_rol = 0
         self.create_canvas()
         self.create_period_labels()
         self.create_row_labels()
@@ -55,7 +56,7 @@ class AttendanceApp(tk.Tk):
                 y1 = y0 + self.rect_height
                 rectangle_color = self.colors[row][col]
                 rectangle = self.canvas.create_rectangle(x0, y0, x1, y1, fill=rectangle_color)
-                self.canvas.tag_bind(rectangle, '<Button-1>', lambda event, row=row, col=col: self.toggle_color(row, col))
+
                 row_rectangles.append(rectangle)
             self.rectangles.append(row_rectangles)
 
@@ -64,6 +65,7 @@ class AttendanceApp(tk.Tk):
             return
 
         self.canvas.itemconfig(self.rectangles[row][col], fill='green')
+        messagebox.showinfo("scan complete","entered data")
 
 
     def end_period(self):
@@ -94,15 +96,13 @@ class AttendanceApp(tk.Tk):
 
     def scan(self):
         import barcode
+
         scanned_data = barcode.scan()
 
         for row in range(5):
-            for col in range(7):
-                if self.row_labels[row] == scanned_data:  # Check if the scanned data matches the row label
-                    self.toggle_color(row, col)
-
-
-
+            if self.row_labels[row] == scanned_data:
+                self.toggle_color(row, self.current_column)
+                return
 
 if __name__ == "__main__":
     app = AttendanceApp()
