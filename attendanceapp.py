@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 
+
 class AttendanceApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -62,10 +63,8 @@ class AttendanceApp(tk.Tk):
         if col != self.current_column:
             return
 
-        current_color = self.colors[row][col]
-        new_color = 'green' if current_color == 'red' else 'red'
-        self.colors[row][col] = new_color
-        self.canvas.itemconfig(self.rectangles[row][col], fill=new_color)
+        self.canvas.itemconfig(self.rectangles[row][col], fill='green')
+
 
     def end_period(self):
         if self.current_column == 6:
@@ -89,6 +88,21 @@ class AttendanceApp(tk.Tk):
 
         self.copy_attendance_button = tk.Button(self, text="Copy Attendance", command=self.copy_attendance)
         self.copy_attendance_button.pack(side=tk.LEFT, padx=10)
+
+        self.scan_button = tk.Button(self, text="Scan", command=self.scan)
+        self.scan_button.pack(side=tk.RIGHT, padx=10, pady=10)
+
+    def scan(self):
+        import barcode
+        scanned_data = barcode.scan()
+
+        for row in range(5):
+            for col in range(7):
+                if self.row_labels[row] == scanned_data:  # Check if the scanned data matches the row label
+                    self.toggle_color(row, col)
+
+
+
 
 if __name__ == "__main__":
     app = AttendanceApp()
