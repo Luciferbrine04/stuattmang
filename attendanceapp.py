@@ -1,13 +1,15 @@
 import tkinter as tk
 from tkinter import messagebox
-
-
+import csv
+import os
+from datetime import datetime
 
 class AttendanceApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Shape Display")
-        self.geometry("1024x600")
+        self.title("attendance")
+        self.geometry("1366x768")
+        self.iconbitmap("graduation-cap.ico")
 
         # Initialize roll_numbers list
         self.roll_numbers = self.read_roll_numbers("roll_numbers.txt")
@@ -31,6 +33,9 @@ class AttendanceApp(tk.Tk):
         self.create_rectangles()
         self.create_buttons()
 
+        # Bind mouse wheel scrolling to the canvas
+        self.canvas.bind("<MouseWheel>", self.on_mousewheel)
+
     def read_roll_numbers(self, filename):
         try:
             with open(filename, "r") as file:
@@ -38,10 +43,6 @@ class AttendanceApp(tk.Tk):
         except FileNotFoundError:
             messagebox.showerror("Error", "Roll numbers file not found!")
             self.destroy()
-
-    # def create_canvas(self):
-    #     self.canvas = tk.Canvas(self, width=self.canvas_width, height=self.canvas_height)
-    #     self.canvas.pack()
 
     def create_scrollable_frame(self):
         self.scrollable_frame = tk.Frame(self)
@@ -101,9 +102,26 @@ class AttendanceApp(tk.Tk):
     def end_period(self):
         if self.current_column == 6:
             messagebox.showinfo("College is over", "Classes have ended for the day.")
-            self.destroy()
+            self.save_attendance_data()
+            self.current_column = 0
+            for row_rectangles in self.rectangles:
+                for rectangle in row_rectangles:
+                    self.canvas.itemconfig(rectangle, fill='red')
         else:
             self.current_column += 1
+
+    def save_attendance_data(self):
+        now = datetime.now()
+        timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"attendance_{timestamp}.csv"
+
+        with open(filename, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Roll Number", "Period 0", "Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 6"])
+            for row, row_label in enumerate(self.row_labels):
+                data = [row_label]
+                data.extend(self.colors[row])
+                writer.writerow(data)
 
     def copy_attendance(self):
         if self.current_column == 0:
@@ -131,8 +149,10 @@ class AttendanceApp(tk.Tk):
         for row in range(len(self.roll_numbers)):
             for col in range(7):
                 if self.row_labels[row] == scanned_data:  # Check if the scanned data matches the row label
-                    self.toggle_color(row, col)
+                    self.toggle_color(row, self.current_column)
 
+    def on_mousewheel(self, event):
+        self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
 
 if __name__ == "__main__":
     app = AttendanceApp()
