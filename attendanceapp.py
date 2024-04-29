@@ -2,34 +2,62 @@ import tkinter as tk
 from tkinter import messagebox
 
 
+
 class AttendanceApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Shape Display")
         self.geometry("1024x600")
 
+        # Initialize roll_numbers list
+        self.roll_numbers = self.read_roll_numbers("roll_numbers.txt")
+
+        # Initialize other attributes
         self.original_rect_width = 50
         self.original_rect_height = 30
         self.rect_width = int(self.original_rect_width * 1.3)
         self.rect_height = int(self.original_rect_height * 1.3)
         self.padding = 5
-
         self.canvas_width = 1024
         self.canvas_height = 600
-
         self.offset_x = (self.canvas_width - (7 * self.rect_width + 6 * self.padding)) // 2
-        self.offset_y = (self.canvas_height - (5 * self.rect_height + 4 * self.padding)) // 2
-
+        self.offset_y = (self.canvas_height - (len(self.roll_numbers) * self.rect_height + (len(self.roll_numbers)-1) * self.padding)) // 2
         self.current_column = 0
-        self.create_canvas()
+
+        #self.create_canvas()
+        self.create_scrollable_frame()
         self.create_period_labels()
         self.create_row_labels()
         self.create_rectangles()
         self.create_buttons()
 
-    def create_canvas(self):
-        self.canvas = tk.Canvas(self, width=self.canvas_width, height=self.canvas_height)
-        self.canvas.pack()
+    def read_roll_numbers(self, filename):
+        try:
+            with open(filename, "r") as file:
+                return [line.strip() for line in file.readlines()]
+        except FileNotFoundError:
+            messagebox.showerror("Error", "Roll numbers file not found!")
+            self.destroy()
+
+    # def create_canvas(self):
+    #     self.canvas = tk.Canvas(self, width=self.canvas_width, height=self.canvas_height)
+    #     self.canvas.pack()
+
+    def create_scrollable_frame(self):
+        self.scrollable_frame = tk.Frame(self)
+        self.scrollable_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.canvas = tk.Canvas(self.scrollable_frame, width=self.canvas_width, height=self.canvas_height)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.scrollbar = tk.Scrollbar(self.scrollable_frame, orient=tk.VERTICAL, command=self.canvas.yview)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.canvas.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox('all')))
+
+        self.canvas_frame = tk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.canvas_frame, anchor='nw')
 
     def create_period_labels(self):
         self.period_labels = ['Period 0', 'Period 1', 'Period 2', 'Period 3', 'Period 4', 'Period 5', 'Period 6']
@@ -38,15 +66,15 @@ class AttendanceApp(tk.Tk):
             self.canvas.create_text(x_center, self.offset_y - 20, text=period_label)
 
     def create_row_labels(self):
-        self.row_labels = ['224027', '224004', '224117', '224014', '224111']
+        self.row_labels = self.roll_numbers
         for row, row_label in enumerate(self.row_labels):
             y_center = self.offset_y + row * (self.rect_height + self.padding) + self.rect_height // 2
             self.canvas.create_text(self.offset_x - 50, y_center, text=row_label)
 
     def create_rectangles(self):
         self.rectangles = []
-        self.colors = [['red' for _ in range(7)] for _ in range(5)]  # Initialize all rectangles to red
-        for row in range(5):
+        self.colors = [['red' for _ in range(7)] for _ in range(len(self.roll_numbers))]  # Initialize all rectangles to red
+        for row in range(len(self.roll_numbers)):
             row_rectangles = []
             for col in range(7):
                 x0 = self.offset_x + col * (self.rect_width + self.padding)
@@ -55,7 +83,8 @@ class AttendanceApp(tk.Tk):
                 y1 = y0 + self.rect_height
                 rectangle_color = self.colors[row][col]
                 rectangle = self.canvas.create_rectangle(x0, y0, x1, y1, fill=rectangle_color)
-
+                self.canvas.tag_bind(rectangle, '<Button-1>',
+                                     lambda event, row=row, col=col: self.toggle_color(row, col))
                 row_rectangles.append(rectangle)
             self.rectangles.append(row_rectangles)
 
@@ -64,8 +93,10 @@ class AttendanceApp(tk.Tk):
             return
 
         self.canvas.itemconfig(self.rectangles[row][col], fill='green')
-        messagebox.showinfo("scan complete","entered data")
-
+        current_color = self.colors[row][col]
+        new_color = 'green' if current_color == 'red' else 'red'
+        self.colors[row][col] = new_color
+        self.canvas.itemconfig(self.rectangles[row][col], fill=new_color)
 
     def end_period(self):
         if self.current_column == 6:
@@ -78,7 +109,7 @@ class AttendanceApp(tk.Tk):
         if self.current_column == 0:
             return
 
-        for row in range(5):
+        for row in range(len(self.roll_numbers)):
             prev_color = self.colors[row][self.current_column - 1]
             self.colors[row][self.current_column] = prev_color
             self.canvas.itemconfig(self.rectangles[row][self.current_column], fill=prev_color)
@@ -95,13 +126,13 @@ class AttendanceApp(tk.Tk):
 
     def scan(self):
         import barcode
-
         scanned_data = barcode.scan()
 
-        for row in range(5):
-            if self.row_labels[row] == scanned_data:
-                self.toggle_color(row, self.current_column)
-                return
+        for row in range(len(self.roll_numbers)):
+            for col in range(7):
+                if self.row_labels[row] == scanned_data:  # Check if the scanned data matches the row label
+                    self.toggle_color(row, col)
+
 
 if __name__ == "__main__":
     app = AttendanceApp()
