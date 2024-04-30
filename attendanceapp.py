@@ -3,7 +3,7 @@ from tkinter import messagebox
 import csv
 import os
 from datetime import datetime
-import pandas as pd
+
 from tabulate import tabulate
 
 class AttendanceApp(tk.Tk):
@@ -49,7 +49,7 @@ class AttendanceApp(tk.Tk):
         day = self.current_day = datetime.now().strftime("%A")
         days = {
             'Monday': {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g'},
-            'Tuesday': {0: 'h', 1: 'i', 2: 'j', 3: 'k', 4: 'l', 5: 'm', 6: 'n'},
+            'Tuesday': {0: 'Jhansi', 1: 'Vidhya', 2: 'Vanitha', 3: 'Kumari', 4: 'Prem', 5: 'Kishan', 6: 'Sitha'},
             'Wednesday': {0: 'o', 1: 'p', 2: 'q', 3: 'r', 4: 's', 5: 't', 6: 'u'},
             'Thursday': {0: 'v', 1: 'w', 2: 'x', 3: 'y', 4: 'z', 5: 'A', 6: 'B'},
             'Friday': {0: 'C', 1: 'D', 2: 'E', 3: 'F', 4: 'G', 5: 'H', 6: 'I'},
@@ -126,8 +126,12 @@ class AttendanceApp(tk.Tk):
     def end_period(self):
         self.period_number += 1
         self.staff(self.period_number)
-        self.period_info_label.config(text=f"Period: {self.period_number}")
-        self.staff_label.config(text=f"Staff: {self.staff(self.period_number)}")
+        if self.period_number<7:
+            self.period_info_label.config(text=f"Period: {self.period_number}")
+            self.staff_label.config(text=f"Staff: {self.staff(self.period_number)}")
+        else:
+            self.period_info_label.config(text=f"Period:clg over")
+            self.staff_label.config(text=f"Staff:clg over")
 
 
         if self.current_column == 6:
@@ -169,8 +173,13 @@ class AttendanceApp(tk.Tk):
                 ["Roll Number", "Period 0", "Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 6"])
             for row, row_label in enumerate(self.row_labels):
                 data = [row_label]
-                attendance_status = ['Present' if color == 'green' else 'Absent' for color in self.colors[row]]
-                data.extend(attendance_status)
+                #attendance_status = ['Present' if color == 'green' else 'Absent' for color in self.colors[row]]
+                for color in self.colors[row]:
+                    if color == 'green':
+                        attendance_status = 'Present'
+                    elif color == 'red':
+                        attendance_status = 'Absent'
+                    data.append(attendance_status)
                 writer.writerow(data)
         os.system(f'start excel {filename}')
 
@@ -183,20 +192,28 @@ class AttendanceApp(tk.Tk):
             self.colors[row][self.current_column] = prev_color
 
             self.canvas.itemconfig(self.rectangles[row][self.current_column], fill=prev_color)
-    def print_attendance_details(self):
-        # Initialize data for the table
-        table_data = [["Roll Number"] + self.period_labels]
 
-        # Add attendance data for each student
+    def print_attendance_details(self):
+        table_data = [["Roll Number"] + self.period_labels]
         for row_label, colors in zip(self.row_labels, self.colors):
             attendance_status = ['Present' if color == 'green' else 'Absent' for color in colors]
             table_data.append([row_label] + attendance_status)
 
-        # Generate the table
         attendance_table = tabulate(table_data, headers="firstrow", tablefmt="grid")
 
-        # Display attendance details in message box
-        messagebox.showinfo("Attendance Details", attendance_table)
+        root = tk.Tk()
+        root.title("Attendance Details")
+
+        text = tk.Text(root, wrap="word", width=700, height=500)
+        text.pack(side="left", fill="both", expand=True)
+
+        scrollbar = tk.Scrollbar(root, command=text.yview)
+        scrollbar.pack(side="right", fill="y")
+        text.config(yscrollcommand=scrollbar.set)
+
+        text.insert("1.0", attendance_table)
+
+
 
     def create_buttons(self):
         self.end_period_button = tk.Button(self, text="End Period", command=self.end_period)
