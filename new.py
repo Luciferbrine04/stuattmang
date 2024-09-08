@@ -3,12 +3,11 @@ from tkinter import messagebox
 import csv
 import os
 from datetime import datetime
-from tabulate import tabulate
 
 class AttendanceApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Attendance")
+        self.title("attendance")
         self.geometry("1366x768")
         self.iconbitmap("graduation-cap.ico")
 
@@ -31,10 +30,7 @@ class AttendanceApp(tk.Tk):
 
         self.period_number = 0
         self.period_info_label = tk.Label(self, text="Period: 0", font=("Helvetica", 25))
-        self.period_info_label.pack(side=tk.LEFT, before=self.day_label, anchor=tk.NE, padx=10, pady=10)
-
-        self.staff_label = tk.Label(self, text=f"Staff : {self.staff(self.period_number)}", font=("Arial", 20))
-        self.staff_label.pack(side=tk.RIGHT, anchor=tk.NE, padx=10, pady=10)
+        self.period_info_label.pack(side=tk.LEFT, before=self.day_label, anchor=tk.NE,padx=10, pady=10)
 
         self.create_scrollable_frame()
         self.create_period_labels()
@@ -43,29 +39,6 @@ class AttendanceApp(tk.Tk):
         self.create_buttons()
 
         self.canvas.bind("<MouseWheel>", self.on_mousewheel)
-
-    def staff(self, period):
-        print(period)
-        day = self.current_day = datetime.now().strftime("%A")
-        dict = {'Monday': {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g'},
-                'Tuesday': {0: 'h', 1: 'i', 2: 'j', 3: 'k', 4: 'l', 5: 'm', 6: 'n'},
-                'Wednesday': {0: 'o', 1: 'p', 2: 'q', 3: 'r', 4: 's', 5: 't', 6: 'u'},
-                'Thursday': {0: 'v', 1: 'w', 2: 'x', 3: 'y', 4: 'z', 5: 'A', 6: 'B'},
-                'Friday': {0: 'C', 1: 'D', 2: 'E', 3: 'F', 4: 'G', 5: 'H', 6: 'I'},
-                'Saturday': {0: 'J', 1: 'K', 2: 'L', 3: 'M', 4: 'N', 5: 'O', 6: 'P'}}
-
-        days = dict.keys()
-        for i in days:
-            if (i == day):
-                self.current_day = day
-        crt = dict[self.current_day]
-        staff = crt.keys()
-        print(staff)
-        for i in staff:
-            if (i == period):
-                self.teacher = crt[i]
-        print(self.teacher)
-        return self.teacher
 
     def read_roll_numbers(self, filename):
         try:
@@ -105,7 +78,7 @@ class AttendanceApp(tk.Tk):
 
     def create_rectangles(self):
         self.rectangles = []
-        self.colors = [['green' for _ in range(7)] for _ in range(len(self.roll_numbers))]  # Initialize all rectangles to red
+        self.colors = [['red' for _ in range(7)] for _ in range(len(self.roll_numbers))]  # Initialize all rectangles to red
         for row in range(len(self.roll_numbers)):
             row_rectangles = []
             for col in range(7):
@@ -124,17 +97,13 @@ class AttendanceApp(tk.Tk):
         if col != self.current_column:
             return
 
-        self.canvas.itemconfig(self.rectangles[row][col], fill='red')
+        self.canvas.itemconfig(self.rectangles[row][col], fill='green')
         current_color = self.colors[row][col]
-        new_color = 'red' if current_color == 'green' else 'green'
+        new_color = 'green' if current_color == 'red' else 'red'
         self.colors[row][col] = new_color
         self.canvas.itemconfig(self.rectangles[row][col], fill=new_color)
 
     def end_period(self):
-        self.period_number += 1
-        self.staff(self.period_number)
-        self.period_info_label.config(text=f"Period: {self.period_number}")
-        self.staff_label.config(text=f"Staff : {self.staff(self.period_number)}")
         if self.current_column == 6:
             messagebox.showinfo("College is over", "Classes have ended for the day.")
             self.save_attendance_data()
@@ -172,38 +141,19 @@ class AttendanceApp(tk.Tk):
             self.canvas.itemconfig(self.rectangles[row][self.current_column], fill=prev_color)
 
 
-    # def print_attendance_details(self):
-    #     attendance_details = ""
-    #
-    #     attendance_details += "Attendance Details:\n\n"
-    #
-    #     attendance_details += "Roll Number, " + ", ".join(self.period_labels[:self.current_column + 1]) + "\n"
-    #
-    #     for row_label, colors in zip(self.row_labels, self.colors):
-    #         attendance_status = ['Present' if color == 'green' else 'Absent' for color in
-    #                              colors[:self.current_column + 1]]
-    #         attendance_details += f"{row_label}, " + ", ".join(attendance_status) + "\n"
-    #
-    #     messagebox.showinfo("Attendance Details", attendance_details)
-
-
-
-    # Update the method print_attendance_details
     def print_attendance_details(self):
-        # Initialize data for the table
-        table_data = [["Roll Number"] + self.period_labels[:self.current_column + 1]]
+        attendance_details = ""
 
-        # Add attendance data for each student
+        attendance_details += "Attendance Details:\n\n"
+
+        attendance_details += "Roll Number, " + ", ".join(self.period_labels[:self.current_column + 1]) + "\n"
+
         for row_label, colors in zip(self.row_labels, self.colors):
             attendance_status = ['Present' if color == 'green' else 'Absent' for color in
                                  colors[:self.current_column + 1]]
-            table_data.append([row_label] + attendance_status)
+            attendance_details += f"{row_label}, " + ", ".join(attendance_status) + "\n"
 
-        # Generate the table
-        attendance_table = tabulate(table_data, headers="firstrow", tablefmt="grid")
-
-        # Display attendance details in message box
-        messagebox.showinfo("Attendance Details", attendance_table)
+        messagebox.showinfo("Attendance Details", attendance_details)
 
     def create_buttons(self):
         self.end_period_button = tk.Button(self, text="End Period", command=self.end_period)

@@ -13,9 +13,6 @@ def encode_number(number):
     return encoded_str
 
 # Example usage
-file_path = 'roll_numbers.txt'
+file_path = 'barcodedata.txt'
 encoded_numbers = encode_number_from_file(file_path)
 print("Encoded numbers:", encoded_numbers)
-with open('enbarcodedata.txt', 'w') as file:
-    for number in encoded_numbers:
-        file.write(str(number) + '\n')
